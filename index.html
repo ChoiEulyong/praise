@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>우리 반 칭찬카드</title>
+<style>
+  :root {
+    --ink: #2A2340;
+    --muted: #6A6382;
+    --bg: #F3F0FB;
+    --panel: #FFFFFF;
+    --line: #D9D2EC;
+    --main: #6B4FBB;
+    --gold: #F2B705;
+    --gold-soft: #FFF3C4;
+    --bar: #E8E3F5;
+    --danger: #B3261E;
+    --ok: #1F7A4D;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--ink);
+    font-family: "Malgun Gothic", "Apple SD Gothic Neo", "Noto Sans KR", sans-serif;
+    font-size: 18px;
+  }
+  button { font: inherit; cursor: pointer; }
+  button:focus-visible, input:focus { outline: 3px solid var(--gold); outline-offset: 2px; }
+  header {
+    display: flex; flex-wrap: wrap; align-items: center; gap: 12px 24px;
+    padding: 20px 28px; background: var(--main); color: #fff;
+  }
+  header h1 { margin: 0; font-size: 38px; letter-spacing: -1px; }
+  #sync { font-size: 16px; opacity: .9; }
+  .wrap { max-width: 1500px; margin: 0 auto; padding: 22px 28px 48px; }
+  .give {
+    display: grid; grid-template-columns: 220px 1fr auto; gap: 12px; align-items: end;
+    background: var(--panel); border: 2px solid var(--line); border-radius: 16px; padding: 18px 20px;
+  }
+  @media (max-width: 760px) { .give { grid-template-columns: 1fr; } .wrap, header { padding-left: 14px; padding-right: 14px; } }
+  label { display: block; font-size: 16px; font-weight: 700; color: var(--muted); margin-bottom: 6px; }
+  select, input {
+    width: 100%; padding: 12px 14px; font: inherit; font-size: 22px; color: var(--ink);
+    border: 2px solid var(--line); border-radius: 10px; background: #fff;
+  }
+  .primary { padding: 13px 26px; font-size: 22px; font-weight: 800; color: var(--ink); background: var(--gold); border: 0; border-radius: 12px; }
+  .ghost { padding: 9px 16px; font-size: 17px; font-weight: 700; color: var(--main); background: #fff; border: 2px solid var(--main); border-radius: 10px; }
+  .msg { min-height: 1.5em; margin: 10px 4px 0; font-size: 17px; }
+  .msg.error { color: var(--danger); } .msg.ok { color: var(--ok); }
+  .tools { display: flex; flex-wrap: wrap; gap: 10px; align-items: end; margin: 22px 0 14px; }
+  .tools .add { display: flex; gap: 8px; }
+  .tools .add input { width: 200px; font-size: 18px; padding: 9px 12px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 16px; }
+  .card { background: var(--panel); border: 2px solid var(--line); border-radius: 18px; padding: 18px 18px 16px; }
+  .card.ready { border-color: var(--gold); background: var(--gold-soft); }
+  .card .name { background: none; border: 0; padding: 0; font-size: 34px; font-weight: 800; color: var(--ink); text-align: left; }
+  .card .name:hover { text-decoration: underline; }
+  .card .num { font-size: 24px; font-weight: 800; margin: 6px 0 8px; font-variant-numeric: tabular-nums; }
+  .card .num small { font-size: 18px; color: var(--muted); font-weight: 600; }
+  .bar { height: 16px; background: var(--bar); border-radius: 99px; overflow: hidden; }
+  .bar span { display: block; height: 100%; background: var(--main); border-radius: 99px; }
+  .card.ready .bar span { background: var(--gold); }
+  .card .game { margin-top: 14px; width: 100%; padding: 11px; font-size: 20px; font-weight: 800; border: 0; border-radius: 12px; background: var(--gold); color: var(--ink); }
+  .card .game:disabled { background: var(--bar); color: var(--muted); cursor: not-allowed; }
+  .empty { grid-column: 1 / -1; text-align: center; padding: 50px; border: 3px dashed var(--line); border-radius: 18px; color: var(--muted); font-size: 22px; }
+  details { margin-top: 28px; background: var(--panel); border: 2px solid var(--line); border-radius: 16px; padding: 14px 20px; }
+  summary { font-weight: 800; font-size: 20px; cursor: pointer; }
+  .gifts { display: grid; grid-template-columns: repeat(3, 1fr) auto; gap: 10px; margin-top: 14px; align-items: end; }
+  @media (max-width: 760px) { .gifts { grid-template-columns: 1fr; } }
+  .gifts input { font-size: 18px; padding: 9px 12px; }
+
+  /* 창 스타일 */
+  dialog { border: 0; border-radius: 22px; padding: 0; width: min(760px, 94vw); color: var(--ink); }
+  dialog::backdrop { background: rgba(42, 35, 64, .55); }
+  .dlg { padding: 26px 28px; }
+  .dlg h2 { margin: 0 0 6px; font-size: 30px; }
+  .dlg p { margin: 0 0 16px; color: var(--muted); }
+  .dlg .row { display: flex; gap: 10px; justify-content: flex-end; flex-wrap: wrap; margin-top: 20px; }
+  .danger { padding: 10px 18px; font-size: 18px; font-weight: 700; color: #fff; background: var(--danger); border: 0; border-radius: 10px; }
+  .history { list-style: none; margin: 0; padding: 0; max-height: 46vh; overflow: auto; border-top: 2px solid var(--line); }
+  .history li { display: grid; grid-template-columns: 130px 1fr; gap: 10px; padding: 10px 2px; border-bottom: 1px solid var(--line); font-size: 18px; }
+  .history li time { color: var(--muted); }
+  .history li.minus { color: var(--main); font-weight: 700; }
+  .adjust { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-top: 16px; font-size: 16px; color: var(--muted); }
+  .adjust input { width: 110px; font-size: 18px; padding: 7px 10px; }
+  .boxes { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; margin: 20px 0 6px; }
+  .box {
+    aspect-ratio: 1; border: 0; border-radius: 20px; font-size: 64px; font-weight: 800; color: #fff;
+    background: var(--main); box-shadow: inset 0 -10px 0 rgba(0,0,0,.18);
+    display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 4px;
+  }
+  .box:nth-child(2) { background: #E0679A; } .box:nth-child(3) { background: #2E9E8F; }
+  .box.open { background: var(--gold-soft); color: var(--ink); box-shadow: none; font-size: 22px; padding: 10px; text-align: center; }
+  .box.open.pick { outline: 6px solid var(--gold); }
+  .box.open b { font-size: 26px; }
+  .box:disabled { cursor: default; }
+  .result { font-size: 28px; font-weight: 800; text-align: center; min-height: 1.4em; margin-top: 10px; }
+  @media (prefers-reduced-motion: no-preference) { .box.open.pick { animation: pop .4s ease-out; } }
+  @keyframes pop { 0% { transform: scale(.85); } 70% { transform: scale(1.06); } 100% { transform: none; } }
+</style>
+</head>
+<body>
+<header>
+  <h1>우리 반 칭찬카드</h1>
+  <span id="sync"></span>
+</header>
+
+<div class="wrap">
+  <section class="give" aria-label="칭찬카드 주기">
+    <div>
+      <label for="who">누구에게</label>
+      <select id="who"></select>
+    </div>
+    <div>
+      <label for="reason">칭찬 사유 (꼭 적어 주세요)</label>
+      <input id="reason" placeholder="예: 친구가 떨어뜨린 물건을 주워 줌">
+    </div>
+    <button type="button" class="primary" id="giveBtn">카드 1장 주기</button>
+  </section>
+  <p class="msg" id="msg" role="status"></p>
+
+  <div class="tools">
+    <div class="add">
+      <input id="newName" placeholder="학생 이름" aria-label="추가할 학생 이름">
+      <button type="button" class="ghost" id="addBtn">학생 추가</button>
+    </div>
+  </div>
+
+  <section class="grid" id="grid" aria-label="학생별 칭찬카드"></section>
+
+  <details>
+    <summary>선물 3가지 바꾸기</summary>
+    <div class="gifts">
+      <div><label for="g0">선물 1</label><input id="g0"></div>
+      <div><label for="g1">선물 2</label><input id="g1"></div>
+      <div><label for="g2">선물 3</label><input id="g2"></div>
+      <button type="button" class="ghost" id="giftSave">선물 저장</button>
+    </div>
+  </details>
+</div>
+
+<!-- 받은 내역 모달 -->
+<dialog id="historyDlg">
+  <div class="dlg">
+    <h2 id="hTitle"></h2>
+    <p id="hSub"></p>
+    <ul class="history" id="hList"></ul>
+    <div class="adjust">
+      교사용 개수 수정
+      <input id="adjustNum" type="number" min="0" aria-label="카드 개수">
+      <button type="button" class="ghost" id="adjustBtn">개수 바꾸기</button>
+    </div>
+    <div class="row">
+      <button type="button" class="danger" id="delBtn">학생 삭제</button>
+      <button type="button" class="ghost" data-close>닫기</button>
+    </div>
+  </div>
+</dialog>
+
+<!-- 확인 모달 -->
+<dialog id="confirmDlg">
+  <div class="dlg">
+    <h2 id="cTitle"></h2>
+    <p id="cText"></p>
+    <div class="row">
+      <button type="button" class="ghost" data-close>취소</button>
+      <button type="button" class="danger" id="cOk">삭제</button>
+    </div>
+  </div>
+</dialog>
+
+<!-- 뽑기 게임 모달 -->
+<dialog id="gameDlg">
+  <div class="dlg">
+    <h2 id="gTitle"></h2>
+    <p>상자 하나를 고르세요. 카드 30장을 쓰고 선물을 받습니다.</p>
+    <div class="boxes" id="boxes"></div>
+    <div class="result" id="gResult" aria-live="polite"></div>
+    <div class="row"><button type="button" class="ghost" data-close>닫기</button></div>
+  </div>
+</dialog>
+
+<script type="module">
+  // ================================================================
+  //  Firebase 연결 부분
+  // ================================================================
+  const firebaseConfig = {
+    apiKey: "AIzaSyA5hWB9QZyF6zAg6Uils5E6xGMBAo05_Oc",
+    authDomain: "chugokcho.firebaseapp.com",
+    projectId: "chugokcho",
+    storageBucket: "chugokcho.firebasestorage.app",
+    messagingSenderId: "10189150042",
+    appId: "1:10189150042:web:6c397567748235eedf8563"
+  };
+  const COLLECTION = "classroom";
+  const DOC_ID = "praise-card";
+  const GOAL = 30;
+
+  // ---------- 데이터 ----------
+  let state = { students: [], gifts: ["자리 바꾸기 1회", "숙제 면제권", "선생님과 점심"] };
+  let db = null, fs = null, docRef = null;
+  const configReady = !String(firebaseConfig.apiKey).startsWith("여기에");
+
+  const $ = id => document.getElementById(id);
+  const today = () => new Date().toLocaleDateString("ko-KR");
+  const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+  const find = id => state.students.find(s => s.id === id);
+  function setMsg(text, kind = "") { $("msg").textContent = text; $("msg").className = `msg ${kind}`; }
+
+  // ---------- 저장 ----------
+  async function commit() {
+    render();
+    if (!db) return;
+    try {
+      await fs.setDoc(docRef, { ...state, updatedAt: fs.serverTimestamp() });
+    } catch (e) {
+      setMsg(`저장 실패: ${e.message}`, "error");
+    }
+  }
+
+  async function connect() {
+    if (!configReady) {
+      $("sync").textContent = "체험 모드 · Firebase 설정값을 넣으면 저장됩니다";
+      render();
+      return;
+    }
+    try {
+      $("sync").textContent = "연결 중…";
+      const { initializeApp } = await import("https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js");
+      fs = await import("https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js");
+      db = fs.getFirestore(initializeApp(firebaseConfig));
+      docRef = fs.doc(db, COLLECTION, DOC_ID);
+
+      // 실시간 데이터 동기화
+      fs.onSnapshot(docRef, snap => {
+        if (snap.exists()) {
+          const d = snap.data();
+          state = { students: d.students || [], gifts: d.gifts || state.gifts };
+          render();
+        } else {
+          commit();
+        }
+        $("sync").textContent = "Firebase에 저장 중 · 모든 기기에서 같은 내용";
+      }, e => setMsg(`불러오기 실패: ${e.message}`, "error"));
+    } catch (e) {
+      $("sync").textContent = "연결 실패";
+      setMsg(`연결 실패: ${e.message}`, "error");
+    }
+  }
+
+  function render() {
+    const keep = $("who").value;
+    $("who").innerHTML = state.students.length
+      ? state.students.map(s => `<option value="${s.id}">${escapeHtml(s.name)}</option>`).join("")
+      : `<option value="">학생을 먼저 추가하세요</option>`;
+    if (find(keep)) $("who").value = keep;
+
+    const grid = $("grid");
+    grid.innerHTML = "";
+    if (!state.students.length) {
+      grid.innerHTML = '<div class="empty">아래 칸에 학생 이름을 넣고 ‘학생 추가’를 누르세요.</div>';
+    }
+    state.students.forEach(s => {
+      const ready = s.count >= GOAL;
+      const card = document.createElement("article");
+      card.className = "card" + (ready ? " ready" : "");
+      card.innerHTML = `
+        <button type="button" class="name" title="받은 내역 보기"></button>
+        <div class="num">${s.count} <small>/ ${GOAL}</small></div>
+        <div class="bar" role="progressbar" aria-valuemin="0" aria-valuemax="${GOAL}" aria-valuenow="${Math.min(s.count, GOAL)}">
+          <span style="width:${Math.min(100, s.count / GOAL * 100)}%"></span>
+        </div>
+        <button type="button" class="game" ${ready ? "" : "disabled"}>${ready ? "게임 참여" : `${GOAL - s.count}장 더 모으면 게임`}</button>`;
+      card.querySelector(".name").textContent = s.name;
+      card.querySelector(".name").onclick = () => openHistory(s.id);
+      card.querySelector(".game").onclick = () => openGame(s.id);
+      grid.appendChild(card);
+    });
+    state.gifts.forEach((g, i) => { if (document.activeElement !== $("g" + i)) $("g" + i).value = g; });
+  }
+  const escapeHtml = t => t.replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+
+  // ---------- 학생 추가 ----------
+  $("addBtn").onclick = () => {
+    const name = $("newName").value.trim();
+    if (!name) { setMsg("추가할 학생 이름을 적어 주세요.", "error"); return; }
+    if (state.students.some(s => s.name === name)) { setMsg(`‘${name}’ 학생은 이미 있습니다.`, "error"); return; }
+    state.students.push({ id: uid(), name, count: 0, history: [] });
+    $("newName").value = "";
+    setMsg(`${name} 학생을 추가했습니다.`, "ok");
+    commit();
+  };
+  $("newName").addEventListener("keydown", e => { if (e.key === "Enter") $("addBtn").click(); });
+
+  // ---------- 카드 주기 ----------
+  $("giveBtn").onclick = () => {
+    const s = find($("who").value);
+    const reason = $("reason").value.trim();
+    if (!s) { setMsg("먼저 학생을 추가해 주세요.", "error"); return; }
+    if (!reason) { setMsg("칭찬 사유를 적어야 카드를 줄 수 있습니다.", "error"); $("reason").focus(); return; }
+    s.count += 1;
+    s.history.unshift({ date: today(), reason });
+    $("reason").value = "";
+    setMsg(`${s.name}에게 칭찬카드 1장을 줬습니다. (지금 ${s.count}장)`, "ok");
+    commit();
+  };
+  $("reason").addEventListener("keydown", e => { if (e.key === "Enter") $("giveBtn").click(); });
+
+  // ---------- 받은 내역 ----------
+  let current = null;
+  function openHistory(id) {
+    const s = find(id); if (!s) return;
+    current = id;
+    $("hTitle").textContent = `${s.name}의 칭찬카드`;
+    $("hSub").textContent = `지금 ${s.count}장 · 받은 기록 ${s.history.length}개`;
+    $("hList").innerHTML = s.history.length ? "" : "<li><span></span><span>아직 받은 칭찬카드가 없습니다.</span></li>";
+    s.history.forEach(h => {
+      const li = document.createElement("li");
+      if (h.reason.startsWith("[")) li.className = "minus";
+      li.innerHTML = `<time></time><span></span>`;
+      li.querySelector("time").textContent = h.date;
+      li.querySelector("span").textContent = h.reason;
+      $("hList").appendChild(li);
+    });
+    $("adjustNum").value = s.count;
+    $("historyDlg").showModal();
+  }
+  $("adjustBtn").onclick = () => {
+    const s = find(current); if (!s) return;
+    const n = Math.max(0, Math.floor(Number($("adjustNum").value) || 0));
+    s.history.unshift({ date: today(), reason: `[교사 수정] ${s.count}장 → ${n}장` });
+    s.count = n;
+    commit(); openHistory(current);
+  };
+  $("delBtn").onclick = () => {
+    const s = find(current); if (!s) return;
+    $("cTitle").textContent = `${s.name} 학생을 삭제할까요?`;
+    $("cText").textContent = `칭찬카드 ${s.count}장과 받은 기록이 모두 지워집니다. 다시 추가하면 0장부터 시작합니다.`;
+    $("confirmDlg").showModal();
+  };
+  $("cOk").onclick = () => {
+    const s = find(current);
+    state.students = state.students.filter(x => x.id !== current);
+    $("confirmDlg").close(); $("historyDlg").close();
+    setMsg(`${s ? s.name : "학생"}을(를) 삭제했습니다.`, "ok");
+    commit();
+  };
+
+  // ---------- 뽑기 게임 ----------
+  function openGame(id) {
+    const s = find(id);
+    if (!s || s.count < GOAL) return;
+    current = id;
+    $("gTitle").textContent = `${s.name}의 선물 뽑기`;
+    $("gResult").textContent = "";
+    const prizes = [...state.gifts].sort(() => Math.random() - 0.5);
+    $("boxes").innerHTML = "";
+    prizes.forEach((prize, i) => {
+      const b = document.createElement("button");
+      b.type = "button"; b.className = "box"; b.textContent = "?";
+      b.setAttribute("aria-label", `${i + 1}번 상자`);
+      b.onclick = () => pick(b, prizes);
+      $("boxes").appendChild(b);
+    });
+    $("gameDlg").showModal();
+  }
+  function pick(chosen, prizes) {
+    const s = find(current);
+    if (!s || s.count < GOAL) return;
+    const boxes = [...$("boxes").children];
+    boxes.forEach((b, i) => {
+      b.disabled = true;
+      b.classList.add("open");
+      b.innerHTML = `<span>${i + 1}번 상자</span><b></b>`;
+      b.querySelector("b").textContent = prizes[i];
+      if (b === chosen) b.classList.add("pick");
+    });
+    const prize = prizes[boxes.indexOf(chosen)];
+    s.count -= GOAL;
+    s.history.unshift({ date: today(), reason: `[선물 뽑기] ${prize} (카드 ${GOAL}장 사용)` });
+    $("gResult").textContent = `축하해요! ‘${prize}’ 당첨`;
+    setMsg(`${s.name}: ‘${prize}’ 당첨, 남은 카드 ${s.count}장`, "ok");
+    commit();
+  }
+
+  // ---------- 선물 바꾸기 ----------
+  $("giftSave").onclick = () => {
+    const g = [0, 1, 2].map(i => $("g" + i).value.trim());
+    if (g.some(x => !x)) { setMsg("선물 이름 3개를 모두 적어 주세요.", "error"); return; }
+    state.gifts = g;
+    setMsg("선물을 바꿨습니다.", "ok");
+    commit();
+  };
+
+  document.querySelectorAll("[data-close]").forEach(b => b.onclick = () => b.closest("dialog").close());
+  connect();
+</script>
+</body>
+</html>
